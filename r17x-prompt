@@ -1,0 +1,299 @@
+```
+PRINCIPAL THINKING             YOUR ROLE
+
+Problem                        USER PROMPT
+   ↓
+Why does this problem exist?   AskUserQuestion
+   ↓
+What created the conditions?   AskUserQuestion
+   ↓
+What are we REALLY solving?    AskUserQuestion
+   ↓
+What could go wrong?           AskUserQuestion
+   ↓
+Solution + Failure Modes
+   ↓
+Feedback Loop ←──────────────┐
+   ↓                         │ DEEPTHINK
+Iterate                      │ RECURSIVE REFINEMENT
+   └─────────────────────────┘
+AskUserQuestion
+```
+----
+
+## Meta-Cognitive Protocol
+
+For EVERY phase below, apply this reasoning:
+
+1. DECOMPOSE — break into 3-8 sub-problems
+2. SOLVE — each piece separately, confidence score 0.0-1.0
+3. VERIFY — logical consistency, factual grounding, completeness, hidden assumptions
+4. SYNTHESIZE — combine using confidence scores as weights
+5. REFLECT — if overall confidence < 0.8 → identify weak points, retry that part
+6. FINAL only when satisfied
+
+----
+
+## Question Cascade (Agent-Spawned)
+
+Each phase spawns parallel agents. Each agent produces a scored result.
+Agents run in parallel within a phase. Phases run sequentially (each depends on prior output).
+
+```
+PHASE 1                    PHASE 2                    PHASE 3                    PHASE 4
+Context Excavation         Constraint Mapping         Failure Mode Analysis      Solution Architecture
+       │                          │                          │                          │
+  ┌────┴────┐                ┌────┴────┐                ┌────┴────┐                ┌────┴────┐
+  │         │                │         │                │         │                │         │
+Agent A1  Agent A2         Agent B1  Agent B2         Agent C1  Agent C2         Agent D1  Agent D2
+  │         │                │         │                │         │                │         │
+  ▼         ▼                ▼         ▼                ▼         ▼                ▼         ▼
+Result    Result           Result    Result           Result    Result           Result    Result
+(0.0-1.0) (0.0-1.0)       (0.0-1.0) (0.0-1.0)       (0.0-1.0) (0.0-1.0)       (0.0-1.0) (0.0-1.0)
+  │         │                │         │                │         │                │         │
+  └────┬────┘                └────┬────┘                └────┬────┘                └────┬────┘
+       │                          │                          │                          │
+   SYNTHESIZE                 SYNTHESIZE                 SYNTHESIZE                 SYNTHESIZE
+   (weighted)                 (weighted)                 (weighted)                 (weighted)
+       │                          │                          │                          │
+   confidence                 confidence                 confidence                 confidence
+   >= 0.8?                    >= 0.8?                    >= 0.8?                    >= 0.8?
+       │                          │                          │                          │
+  YES → next              YES → next                YES → next                YES → review loop
+  NO  → respawn            NO  → respawn              NO  → respawn              NO  → respawn
+```
+
+### Phase 1: Context Excavation
+
+Spawn 2 agents in parallel:
+
+**Agent A1: "Why Ladder"** (Explore agent)
+- Why does this need to exist?
+- What happens if we don't do it?
+- What has been tried before?
+- Climb from concrete → abstract until you reach mission/purpose
+
+**Agent A2: "Stakeholder Map"** (Explore agent)
+- Who are we really building for?
+- What do they believe before they encounter this?
+- What are their failure states?
+- Map personas → needs → current beliefs
+
+**Output format per agent:**
+```
+[Decomposition] ...
+[Solutions + Confidence] sub-problem: answer (0.X)
+[Verification] checked against: consistency, grounding, completeness
+[Phase Confidence] X.XX
+[Key gaps] ...
+```
+
+Main agent synthesizes A1 + A2 → if < 0.8 → AskUserQuestion to fill gaps → respawn weak agent
+
+### Phase 2: Constraint Mapping
+
+Spawn 2 agents in parallel:
+
+**Agent B1: "Hard Constraints"** (Explore agent)
+- What resources exist? What can we NOT do?
+- Technical boundaries, team capacity, time, budget
+- Non-negotiable requirements
+
+**Agent B2: "Soft Constraints + Anti-Patterns"** (Explore agent)
+- What should we prefer? What must we avoid?
+- Industry anti-patterns to reject
+- Define what NOT to do (60% anti-patterns, 40% patterns)
+
+Main agent synthesizes → produces constraint space diagram
+
+### Phase 3: Failure Mode Analysis
+
+Spawn 2 agents in parallel:
+
+**Agent C1: "Catastrophic Failures"** (general-purpose agent)
+- List 10+ ways this could fail
+- Classify: catastrophic vs recoverable
+- For catastrophic: define prevention
+
+**Agent C2: "State Machine"** (general-purpose agent)
+- Model the system as states + transitions
+- For each state: entry conditions, exit conditions, failure conditions, recovery paths
+- Identify where failures cascade
+
+Main agent synthesizes → failure-aware solution space
+
+### Phase 4: Solution Architecture
+
+Spawn 2 agents in parallel:
+
+**Agent D1: "Structure"** (Plan agent)
+- Minimum viable architecture
+- Component interfaces and dependencies
+- Dependency-ordered implementation sequence
+
+**Agent D2: "Validation"** (general-purpose agent)
+- Can every decision trace UP to mission? (Why Ladder)
+- Can every decision trace DOWN to implementation? (How Path)
+- Does it conflict with any constraint from Phase 2?
+- Would someone who never met you produce approved output from this spec?
+
+Main agent synthesizes → if < 0.8 → iterate weak areas
+
+----
+
+## Multi-Agent Review Loop
+
+After Phase 4 produces a solution, enter review loop before execution.
+
+### Review Agents (spawn in parallel)
+
+**Agent R1: "Principal Engineer"** (general-purpose agent)
+
+Persona: You are a Principal Engineer reviewing this solution for architectural soundness.
+Evaluate:
+- Does the decomposition miss any sub-problems?
+- Are constraints complete? Any hidden assumptions?
+- Are failure modes adequately addressed?
+- Is the solution the simplest that satisfies all constraints?
+- Score: 1-10 with specific issues for anything < 10
+
+**Agent R2: "Devil's Advocate"** (general-purpose agent)
+
+Persona: You are a skeptic whose job is to find flaws, gaps, and over-engineering.
+Evaluate:
+- What's over-engineered? What's under-specified?
+- What failure modes were missed?
+- Where does the reasoning chain break?
+- What assumptions are unverified?
+- Score: 1-10 with specific issues for anything < 10
+
+### Review Loop Procedure
+
+```
+Step 1: Complete Phase 4 (solution ready)
+Step 2: Spawn R1 + R2 in parallel
+Step 3: Collect scores + issues from both agents
+Step 4: If BOTH score 10/10 → proceed to execution
+Step 5: If ANY score < 10 → fix identified issues
+Step 6: Re-spawn ONLY the agent(s) that scored < 10
+Step 7: Repeat Steps 3-6 (max 3 iterations)
+Step 8: If still < 10 after 3 iterations → AskUserQuestion with remaining issues
+```
+
+----
+
+## Final Output (Conditional)
+
+After review loop passes (both R1 + R2 at 10/10), present the user with output options via AskUserQuestion.
+
+Always include these artifacts BEFORE asking:
+
+[PROBLEM DECOMPOSITION TREE]:
+<!-- Generated from Phase 1-2 synthesis -->
+
+[LIST ALL CONSTRAINTS]:
+<!-- Hard + Soft from Phase 2 agents -->
+
+[CONSTRAINT DEFINE THE SOLUTION SPACE]:
+```
+┌─────────────────────────────────────────────────────────┐
+│░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+│░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+│░░░░░░░░░░░░┌─────────────────────┐░░░░░░░░░░░░░░░░░░░░░│
+│░░░░░░░░░░░░│                     │░░░░░░░░░░░░░░░░░░░░░│
+│░░░░░░░░░░░░│   VALID SOLUTIONS   │░░░░░░░░░░░░░░░░░░░░░│
+│░░░░░░░░░░░░│   (small, focused)  │░░░░░░░░░░░░░░░░░░░░░│
+│░░░░░░░░░░░░│                     │░░░░░░░░░░░░░░░░░░░░░│
+│░░░░░░░░░░░░└─────────────────────┘░░░░░░░░░░░░░░░░░░░░░│
+│░░░░░░░░░░░░ INVALID SPACE ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+│░░░░░░░░░░░░ (eliminated by constraints) ░░░░░░░░░░░░░░░│
+└─────────────────────────────────────────────────────────┘
+```
+[AGGREGATE CONFIDENCE]:
+<!-- Phase 1: X.XX | Phase 2: X.XX | Phase 3: X.XX | Phase 4: X.XX
+     Review R1: N/10 | Review R2: N/10
+     Overall: X.XX
+     Key caveats / uncertainties: ... -->
+
+Then AskUserQuestion — how should we deliver the result?
+
+```
+How would you like to proceed with this analysis?
+
+A. Summary Report (default)
+   → Problem decomposition + constraints + solution + confidence scores
+   → Good for: quick decisions, sharing with team, documenting rationale
+
+B. Execute as Plan (→ EnterPlanMode + TaskCreate)
+   → Converts solution into structured plan with T1/T2/T[N] tasks
+   → Each task gets: agent type, files to read, deliverables, verification
+   → Tasks auto-created via TaskCreate on approval, executed by spawned agents
+   → Good for: implementation, multi-step builds, complex projects
+
+C. Documentation Architecture
+   → Generates layered documentation (conditional on what the solution requires):
+     LAYER 1: Foundation    → if problem requires identity/context clarity
+     LAYER 2: Voice         → if problem involves communication/UX copy
+     LAYER 3: Requirements  → always (business goals, success metrics)
+     LAYER 4: Architecture  → if problem has components/stages/states
+     LAYER 5: Execution     → always (implementation specs, validation)
+   → Good for: specs, PRDs, onboarding docs, knowledge transfer
+
+[SESSION-DERIVED OPTIONS — add dynamically based on what emerged during analysis:]
+D. [Option based on session context, e.g., "Prototype the auth middleware directly"]
+E. [Option based on session context, e.g., "Create RFC for team review"]
+...
+N. [Any additional options that make sense given the specific problem]
+```
+
+### Option B: Plan Mode Execution
+
+When user selects B, use EnterPlanMode and generate plan using this structure:
+
+<!--
+The plan file MUST follow the /plans template:
+- Title, Status, Goal header
+- Plan Approval section with TaskCreate instructions
+- Agent Task Dispatch with T1/T2/T[N] task table
+- Each task is SELF-CONTAINED (agent has no access to plan file)
+- Each task has: Agent type, Priority, Effort, References, Files to Read,
+  Task Description, Deliverables, Verification
+- Execution Order showing phases + parallelism
+- Global Verification for integration checks
+- Open Questions surfaced via AskUserQuestion
+
+Map from principal-think phases to plan tasks:
+- Phase 1-2 findings → inform task descriptions and context
+- Phase 3 failure modes → inform verification steps
+- Phase 4 architecture → defines task structure and dependencies
+- Review loop feedback → refines task scope and acceptance criteria
+
+Agent type mapping:
+- Research/exploration tasks → Explore agent
+- Implementation tasks → general-purpose agent
+- Planning/architecture tasks → Plan agent
+-->
+
+### Option C: Documentation Architecture
+
+When user selects C, generate documentation set:
+
+```
+Each document has:
+├── Purpose statement (why this doc exists)
+├── Scope (what it covers / doesn't cover)
+├── Core content (the actual substance)
+├── Anti-patterns (what NOT to do) — 60% of guidance
+├── Examples (good and bad)
+└── Checklist (validation criteria)
+
+Documents ordered by dependency — each doc only references docs before it.
+
+Validate: Can someone who has never met you read this documentation,
+understand WHY every decision was made, know what NOT to do,
+and produce output you would approve? If NO → what's missing? Add it.
+```
+
+----
+
+USER PROMPT:
